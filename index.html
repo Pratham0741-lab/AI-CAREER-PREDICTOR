@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FuturePath AI | Nebula Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff2a6d; 
+            --neon-cyan: #05d9e8; 
+            --text-main: #d1f7ff;
+        }
+
+        /* --- DYNAMIC NEBULA BACKGROUND --- */
+        body {
+            font-family: 'Space Grotesk', sans-serif; 
+            margin: 0; 
+            padding: 40px 20px; 
+            color: var(--text-main); 
+            min-height: 100vh;
+            /* Vertical deep space gradient */
+            background: linear-gradient(180deg, #10002b 0%, #240046 40%, #000000 100%);
+            background-size: 100% 300%;
+            animation: nebulaPulse 10s ease-in-out infinite alternate;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes nebulaPulse {
+            0% { background-position: 50% 0%; }
+            100% { background-position: 50% 30%; } /* Subtle shifting of the nebula */
+        }
+
+        /* --- STARFALL ANIMATION --- */
+        #star-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1;
+            overflow: hidden;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            top: -10px; /* Start just above screen */
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% { 
+                transform: translateY(-20px); 
+                opacity: 0; 
+            }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { 
+                transform: translateY(110vh); /* Fall past bottom of screen */
+                opacity: 0; 
+            }
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 50px; position: relative; z-index: 1; }
+
+        h1 {
+            font-size: 4rem; font-weight: 700; text-align: center; margin: 0;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-transform: uppercase; letter-spacing: 5px; 
+            filter: drop-shadow(0 0 15px rgba(5, 217, 232, 0.6));
+        }
+
+        /* --- TRANSLUCENT HOVER OBJECTS --- */
+        .card {
+            background: rgba(15, 15, 40, 0.7); /* Darker normally */
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px; padding: 40px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transition: all 0.4s ease;
+        }
+
+        /* HOVER: See the stars falling behind the card */
+        .card:hover {
+            background: rgba(255, 255, 255, 0.03); /* Highly transparent */
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(5, 217, 232, 0.15);
+            backdrop-filter: blur(3px); /* Reduce blur to see movement */
+        }
+        
+        .upload-zone {
+            border: 2px dashed rgba(255,255,255,0.2); padding: 30px; text-align: center; border-radius: 15px; 
+            cursor: pointer; transition: 0.3s; background: rgba(0,0,0,0.2);
+        }
+        .upload-zone:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--neon-cyan);
+            box-shadow: inset 0 0 20px rgba(5, 217, 232, 0.2);
+        }
+
+        /* Inputs & Buttons */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        
+        label { display: block; color: var(--neon-cyan); font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 5px rgba(0,0,0,0.8); }
+        
+        input, select {
+            width: 100%; padding: 12px; 
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; border-radius: 8px; font-family: inherit; 
+            transition: 0.3s; box-sizing: border-box;
+        }
+        input:hover, select:hover { background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.3); }
+        input:focus, select:focus { outline: none; border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 42, 109, 0.4); background: rgba(0,0,0,0.8); }
+
+        .predict-btn {
+            width: 100%; padding: 20px; 
+            background: linear-gradient(90deg, rgba(5, 217, 232, 0.8), rgba(255, 42, 109, 0.8));
+            border: 1px solid transparent;
+            border-radius: 50px; font-size: 1.5rem; font-weight: 700; color: #fff;
+            text-transform: uppercase; letter-spacing: 3px; cursor: pointer; transition: all 0.4s ease; margin-top: 30px;
+        }
+        
+        .predict-btn:hover { 
+            background: rgba(255,255,255,0.1); /* Glassy button */
+            border-color: var(--neon-cyan);
+            letter-spacing: 5px; 
+            box-shadow: 0 0 30px var(--neon-cyan), inset 0 0 20px var(--neon-cyan);
+            text-shadow: 0 0 10px #fff;
+        }
+
+        /* Results Layout */
+        .match-header { text-align: center; margin-bottom: 40px; }
+        .match-role { font-size: 3.5rem; color: #fff; text-shadow: 0 0 20px var(--neon-cyan); margin: 10px 0; }
+        .match-score { color: var(--neon-pink); font-size: 1.5rem; letter-spacing: 2px; text-shadow: 0 0 10px var(--neon-pink); }
+
+        .summary-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        
+        .ai-summary {
+            background: rgba(0,0,0,0.3); padding: 30px; border-radius: 15px; border-left: 4px solid var(--neon-cyan);
+            font-size: 1.1rem; line-height: 1.6; transition: 0.3s;
+        }
+        .ai-summary:hover { background: rgba(255,255,255,0.05); box-shadow: 0 0 20px rgba(5, 217, 232, 0.1); }
+        
+        .influencers h4 { margin-top: 0; color: var(--neon-pink); }
+        .inf-item { margin-bottom: 15px; }
+        .inf-bar-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .inf-bar-fill { height: 100%; background: var(--neon-cyan); width: 0%; transition: width 1s ease; box-shadow: 0 0 10px var(--neon-cyan); }
+
+        /* Learning Path */
+        .learning-path h3 { color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .course-card {
+            background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.3s; cursor: default;
+        }
+        .course-card:hover { 
+            background: rgba(255,255,255,0.05);
+            border-color: var(--neon-pink); 
+            transform: translateY(-5px); 
+            box-shadow: 0 5px 15px rgba(255, 42, 109, 0.2);
+        }
+        .course-skill { font-size: 0.8rem; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 1px; }
+        .course-name { font-size: 1.1rem; font-weight: 600; margin-top: 5px; color: #fff; }
+
+        /* Alternatives */
+        .alt-container { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin: 40px 0; }
+        .alt-badge {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--neon-cyan); padding: 10px 20px; border-radius: 30px;
+            color: #fff; cursor: pointer; transition: 0.3s; user-select: none;
+        }
+        .alt-badge:hover { 
+            background: rgba(255,255,255,0.1); 
+            color: #fff; 
+            box-shadow: 0 0 20px var(--neon-cyan); 
+            backdrop-filter: blur(2px);
+            text-shadow: 0 0 5px var(--neon-cyan);
+        }
+        .alt-badge:active { transform: scale(0.95); }
+
+        /* Charts */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; }
+        .chart-box { 
+            background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; 
+            transition: 0.3s; border: 1px solid transparent;
+        }
+        .chart-box:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+            backdrop-filter: blur(2px);
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed; inset: 0; background: rgba(1, 1, 43, 0.95); z-index: 999; display: none;
+            flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px);
+        }
+        .hex-spinner { width: 60px; height: 60px; background: var(--neon-cyan); box-shadow: 0 0 30px var(--neon-cyan); animation: spin 1s infinite ease-in-out; }
+        @keyframes spin { 0% { transform: perspective(200px) rotateX(0); } 100% { transform: perspective(200px) rotateX(180deg); } }
+        
+        @media (max-width: 768px) { .summary-grid, .charts-grid { grid-template-columns: 1fr; } h1 { font-size: 2.5rem; } }
+    </style>
+</head>
+<body>
+
+<div id="star-container"></div>
+
+<div id="loader"><div class="hex-spinner"></div><h3 style="margin-top:20px; letter-spacing:3px; text-shadow: 0 0 10px var(--neon-cyan);">NEURAL ENGINE PROCESSING</h3></div>
+
+<div class="container">
+    <header><h1>FuturePath AI <span style="font-size:1rem; vertical-align:middle; border:1px solid #fff; padding:2px 8px; border-radius:4px; box-shadow: 0 0 10px white;">PRO</span></h1></header>
+
+    <div class="card">
+        <h2 style="color:#fff; margin-top:0; text-shadow: 0 0 10px rgba(0,0,0,0.5);">01. Resume Analysis</h2>
+        <div class="upload-zone"
+             onclick="document.getElementById('resumeFile').click()">
+            <h3 style="margin:0; color: var(--neon-cyan);">CLICK TO UPLOAD PDF</h3>
+            <p style="font-size:0.9rem; color: #aaa;">AI extracts 15+ metrics automatically</p>
+            <input type="file" id="resumeFile" style="display:none" onchange="parseResume()">
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="color:#fff; margin-top:0; text-shadow: 0 0 10px rgba(0,0,0,0.5);">02. Profile Parameters</h2>
+        <form id="pForm">
+            <div class="form-grid">
+                <div><label>Field</label><select id="Field">
+                    <option>Computer Science</option><option>Engineering</option><option>Finance</option>
+                    <option>Business</option><option>Marketing</option><option>Human Resources</option>
+                    <option>Electronics</option><option>Mechanical</option>
+                </select></div>
+                <div><label>GPA (0-10)</label><input type="number" id="GPA" value="7.5" step="0.1" max="10"></div>
+                <div><label>Coding</label><input type="number" id="Coding_Skills" value="0" max="10"></div>
+                <div><label>Problem Solving</label><input type="number" id="Problem_Solving_Skills" value="0" max="10"></div>
+                <div><label>Communication</label><input type="number" id="Communication_Skills" value="0" max="10"></div>
+                <div><label>Analytical</label><input type="number" id="Analytical_Skills" value="0" max="10"></div>
+                <div><label>Teamwork</label><input type="number" id="Teamwork_Skills" value="0" max="10"></div>
+                <div><label>Projects</label><input type="number" id="Projects" value="0"></div>
+                <div><label>Internships</label><input type="number" id="Internships" value="0"></div>
+                <div><label>Research</label><input type="number" id="Research_Experience" value="0" max="10"></div>
+                <div><label>Leadership</label><input type="number" id="Leadership_Positions" value="0" max="10"></div>
+            </div>
+            <button type="button" class="predict-btn" onclick="predict()">ACTIVATE PREDICTION</button>
+        </form>
+    </div>
+
+    <div id="results" class="card" style="display:none;">
+        <div class="match-header">
+            <div style="font-size:0.9rem; letter-spacing:2px; color:#aaa;">OPTIMAL CAREER PATH IDENTIFIED</div>
+            <div class="match-role" id="role">-</div>
+            <div class="match-score" id="score">-</div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="ai-summary">
+                <h4 style="margin-top:0; color:var(--neon-cyan);">🤖 AI EXECUTIVE SUMMARY</h4>
+                <p id="summaryText">Loading...</p>
+            </div>
+            <div class="influencers">
+                <h4>KEY INFLUENCERS</h4>
+                <div id="infList"></div>
+            </div>
+        </div>
+
+        <div class="learning-path">
+            <h3>🎓 RECOMMENDED LEARNING PATH</h3>
+            <div class="course-grid" id="courseGrid"></div>
+        </div>
+
+        <h3 style="text-align:center; color:#aaa; margin-top:30px;">CLICK TO EXPLORE ALTERNATIVES</h3>
+        <div class="alt-container" id="altList"></div>
+
+        <div class="charts-grid">
+            <div class="chart-box"><h4>SKILL MATRIX</h4><canvas id="radarChart"></canvas></div>
+            <div class="chart-box"><h4>SALARY PROJECTION</h4><canvas id="salaryChart"></canvas></div>
+            <div class="chart-box"><h4>MARKET DEMAND</h4><canvas id="trendChart"></canvas></div>
+            <div class="chart-box"><h4>SUCCESS PROBABILITY</h4><canvas id="scopeChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- STARFALL GENERATOR ---
+    function createStars() {
+        const container = document.getElementById('star-container');
+        const starCount = 150; // More stars for vertical flow
+        
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            
+            // Random attributes
+            const x = Math.random() * 100; // Random horizontal position
+            const size = Math.random() * 2 + 1; // Size 1px to 3px
+            const duration = Math.random() * 4 + 4; // Medium Pace: 4s to 8s
+            const delay = Math.random() * -10; // Negative delay so they are already falling when page loads
+
+            star.style.left = `${x}%`;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.animationDuration = `${duration}s`;
+            star.style.animationDelay = `${delay}s`; // Instant immersion
+
+            container.appendChild(star);
+        }
+    }
+    createStars(); 
+
+    // --- GLOBAL CONFIG ---
+    Chart.defaults.color = '#ccc'; 
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+    Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+    let charts = {}; 
+
+    // --- 1. RESUME PARSER ---
+    async function parseResume() {
+        const fileInput = document.getElementById('resumeFile');
+        if (!fileInput.files.length) return; 
+
+        const fd = new FormData(); 
+        fd.append('resume', fileInput.files[0]);
+        
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            const res = await fetch('/parse_resume', {method:'POST', body:fd});
+            if (!res.ok) throw new Error("Server Error");
+            const data = await res.json();
+            
+            const fields = ['GPA','Coding_Skills','Problem_Solving_Skills','Communication_Skills',
+                            'Analytical_Skills','Teamwork_Skills','Projects','Internships',
+                            'Research_Experience','Leadership_Positions'];
+            
+            fields.forEach(f => { 
+                if(data[f] !== undefined && document.getElementById(f)) {
+                    document.getElementById(f).value = data[f]; 
+                }
+            });
+        } catch(e) { 
+            console.error(e); 
+            alert("Parsing failed. Please ensure the backend is running and pypdf is installed."); 
+        }
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    // --- 2. MAIN PREDICTION ---
+    async function predict() {
+        const inputs = document.querySelectorAll('#pForm input, #pForm select');
+        const data = {}; 
+        inputs.forEach(i => {
+            if (i.type === 'number') {
+                data[i.id] = parseFloat(i.value) || 0;
+            } else {
+                data[i.id] = i.value;
+            }
+        });
+        
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            const res = await fetch('/predict', {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error("Prediction API Failed");
+            
+            const r = await res.json();
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('role').innerText = r.top_careers[0].role;
+            document.getElementById('score').innerText = r.top_careers[0].match + "% MATCH";
+            document.getElementById('summaryText').innerText = r.ai_summary || "AI Summary unavailable.";
+
+            generateInfluencers(r.top_influencers);
+            generateLearningPath(r.learning_path);
+
+            const aList = document.getElementById('altList'); 
+            aList.innerHTML = '';
+            r.top_careers.slice(1).forEach(c => {
+                const safeRole = c.role.replace(/'/g, "\\'"); 
+                aList.innerHTML += `
+                    <div class="alt-badge" onclick="exploreAlternative('${safeRole}', ${c.match})">
+                        ${c.role} (${c.match}%)
+                    </div>`;
+            });
+
+            renderCharts(r);
+            setTimeout(() => document.getElementById('results').scrollIntoView({behavior:'smooth'}), 100);
+
+        } catch(e) { 
+            console.error(e); 
+            alert("Error generating prediction."); 
+        }
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    // --- 3. EXPLORE ALTERNATIVE ---
+    async function exploreAlternative(roleName, matchScore) {
+        document.getElementById('loader').style.display = 'flex';
+        const inputs = document.querySelectorAll('#pForm input, #pForm select');
+        const userData = {}; 
+        inputs.forEach(i => userData[i.id] = (i.type==='number')? parseFloat(i.value)||0 : i.value);
+
+        try {
+            const res = await fetch('/explore_career', {
+                method: 'POST', 
+                headers: {'Content-Type':'application/json'}, 
+                body: JSON.stringify({ 
+                    target_career: roleName, 
+                    user_data: userData,
+                    match_score: matchScore 
+                })
+            });
+            if (!res.ok) throw new Error("Exploration API Failed");
+            
+            const r = await res.json();
+
+            document.getElementById('role').innerText = r.role;
+            document.getElementById('score').innerText = matchScore + "% MATCH";
+            document.getElementById('summaryText').innerText = r.ai_summary;
+            
+            generateInfluencers(null); 
+            generateLearningPath(null); 
+            
+            renderCharts(r);
+            document.getElementById('results').scrollIntoView({behavior:'smooth'});
+
+        } catch(e) { 
+            console.error(e); 
+            alert("Could not load career details."); 
+        }
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    // --- 4. DATA VISUALIZATION ---
+    function renderCharts(d) {
+        ['radarChart','salaryChart','trendChart','scopeChart'].forEach(id => { 
+            if(charts[id]) { charts[id].destroy(); charts[id] = null; }
+        });
+
+        charts['radarChart'] = new Chart(document.getElementById('radarChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Code','Logic','Comm','Data','Team','GPA'],
+                datasets: [{ label:'You', data:d.user_stats, borderColor:'#05d9e8', backgroundColor:'rgba(5,217,232,0.2)' },
+                           { label:'Avg', data:d.career_stats, borderColor:'#ff2a6d', borderDash:[5,5] }]
+            }, options: { scales: { r: { beginAtZero:true, max:10, grid: { color:'rgba(255,255,255,0.1)' } } } }
+        });
+
+        charts['salaryChart'] = new Chart(document.getElementById('salaryChart'), {
+            type: 'bar',
+            data: { labels: d.salary_labels, datasets: [{ label:'LPA', data:d.salary_data, backgroundColor:'#ff2a6d' }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color:'rgba(255,255,255,0.1)' } } } }
+        });
+
+        charts['trendChart'] = new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: { labels: d.years, datasets: [{ label:'Jobs', data:d.hiring_trend, borderColor:'#05d9e8', tension:0.4 }] },
+            options: { scales: { y: { grid: { color:'rgba(255,255,255,0.1)' } } } }
+        });
+
+        charts['scopeChart'] = new Chart(document.getElementById('scopeChart'), {
+            type: 'doughnut',
+            data: { labels: ['Success','Risk'], datasets: [{ data: [d.scope_score, 100-d.scope_score], backgroundColor: ['#05d9e8','rgba(255,255,255,0.05)'], borderWidth:0 }] },
+            options: { cutout: '80%' }
+        });
+    }
+
+    // --- 5. MOCK DATA GENERATORS ---
+    function generateInfluencers(backendData) {
+        const infDiv = document.getElementById('infList'); 
+        infDiv.innerHTML = '';
+        if (backendData && backendData.length > 0) {
+            backendData.forEach(inf => createInfBar(inf.feature, inf.score));
+        } else {
+            const feats = ['Technical Skills', 'Internship Exp', 'Problem Solving', 'Communication'];
+            feats.forEach(f => createInfBar(f, Math.floor(Math.random() * 30) + 60));
+        }
+        function createInfBar(label, score) {
+            infDiv.innerHTML += `
+                <div class="inf-item">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                        <span>${label}</span><span>${score}%</span>
+                    </div>
+                    <div class="inf-bar-bg"><div class="inf-bar-fill" style="width:${score}%"></div></div>
+                </div>`;
+        }
+    }
+
+    function generateLearningPath(backendData) {
+        const cGrid = document.getElementById('courseGrid'); 
+        cGrid.innerHTML = '';
+        if (backendData && backendData.length > 0) {
+            backendData.forEach(l => createCourseCard(l.skill, l.course));
+        } else {
+            const paths = [
+                {s:'Core Tech', c:'Advanced Algorithms & Data Structures'},
+                {s:'Soft Skills', c:'Strategic Communication for Leaders'},
+                {s:'Industry', c:'System Design & Scalability'},
+                {s:'Tools', c:'Cloud Infrastructure (AWS/Azure)'}
+            ];
+            paths.forEach(p => createCourseCard(p.s, p.c));
+        }
+        function createCourseCard(skill, course) {
+            cGrid.innerHTML += `
+                <div class="course-card">
+                    <div class="course-skill">${skill}</div>
+                    <div class="course-name">${course}</div>
+                </div>`;
+        }
+    }
+</script>
+</body>
+</html>

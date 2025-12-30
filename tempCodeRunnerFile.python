@@ -1,0 +1,155 @@
+import pandas as pd
+import numpy as np
+import random
+
+random.seed(42)
+np.random.seed(42)
+
+ROWS = 5200
+OUTPUT_FILE = "enhanced_career_dataset.csv"
+
+# Career salary caps (LPA)
+CAREER_SALARY_CAP = {
+    "Software Engineer": 65,
+    "Data Scientist": 75,
+    "AI Engineer": 80,
+    "Cybersecurity Analyst": 60,
+    "Embedded Systems Engineer": 45,
+    "IoT Engineer": 50,
+    "Hardware Engineer": 45,
+    "Mechanical Engineer": 40,
+    "Product Design Engineer": 45,
+    "Business Analyst": 50,
+    "Management Consultant": 55,
+    "Digital Marketer": 35,
+    "Marketing Analyst": 40,
+    "Financial Analyst": 55,
+    "Investment Banker": 78,
+    "HR Manager": 30,
+    "Talent Acquisition Specialist": 25
+}
+
+CAREER_BASE_SALARY = {
+    k: max(4, int(v * 0.12)) for k, v in CAREER_SALARY_CAP.items()
+}
+
+fields_and_careers = {
+    "Computer Science": [
+        "Software Engineer", "Data Scientist", "AI Engineer", "Cybersecurity Analyst"
+    ],
+    "Electronics": [
+        "Embedded Systems Engineer", "IoT Engineer", "Hardware Engineer"
+    ],
+    "Mechanical": [
+        "Mechanical Engineer", "Product Design Engineer"
+    ],
+    "Business": [
+        "Business Analyst", "Management Consultant"
+    ],
+    "Marketing": [
+        "Digital Marketer", "Marketing Analyst"
+    ],
+    "Finance": [
+        "Financial Analyst", "Investment Banker"
+    ],
+    "Human Resources": [
+        "HR Manager", "Talent Acquisition Specialist"
+    ]
+}
+
+def bounded(low, high):
+    return random.randint(low, high)
+
+rows = []
+
+for _ in range(ROWS):
+    field = random.choice(list(fields_and_careers.keys()))
+    career = random.choice(fields_and_careers[field])
+
+    # Skill bias by career
+    if career in ["AI Engineer", "Data Scientist"]:
+        coding = bounded(8, 10)
+        analytical = bounded(8, 10)
+        problem = bounded(8, 10)
+    elif career in ["Software Engineer", "Cybersecurity Analyst"]:
+        coding = bounded(7, 9)
+        analytical = bounded(6, 9)
+        problem = bounded(7, 9)
+    elif career in ["Investment Banker", "Management Consultant"]:
+        coding = bounded(3, 6)
+        analytical = bounded(7, 10)
+        problem = bounded(7, 10)
+    elif career in ["HR Manager", "Talent Acquisition Specialist"]:
+        coding = bounded(1, 4)
+        analytical = bounded(4, 6)
+        problem = bounded(4, 6)
+    else:
+        coding = bounded(4, 8)
+        analytical = bounded(4, 8)
+        problem = bounded(4, 8)
+
+    gpa = round(random.uniform(4.8, 9.9), 2)
+
+    communication = bounded(4, 10)
+    teamwork = bounded(4, 10)
+    presentation = bounded(4, 10)
+    networking = bounded(3, 10)
+
+    internships = bounded(0, 6)
+    certifications = bounded(0, 6)
+
+    # --- Salary Calculation ---
+    base = CAREER_BASE_SALARY.get(career, 5)
+    cap = CAREER_SALARY_CAP.get(career, 40)
+
+    core_skill_avg = (
+        coding +
+        analytical +
+        problem +
+        communication +
+        teamwork
+    ) / 5
+
+    growth_multiplier = (
+        (core_skill_avg / 10) * 2.8 +
+        (gpa / 10) * 2.2 +
+        (internships / 6) * 2.0 +
+        (certifications / 6) * 2.0
+    )
+
+    salary = base + (growth_multiplier * base * random.uniform(0.8, 1.3))
+
+    salary = round(min(max(3, salary), cap), 2)
+
+    row = {
+        "GPA": gpa,
+        "Extracurricular_Activities": bounded(0, 8),
+        "Internships": internships,
+        "Projects": bounded(1, 10),
+        "Leadership_Positions": bounded(0, 4),
+        "Field_Specific_Courses": bounded(1, 10),
+        "Research_Experience": bounded(0, 4),
+
+        "Coding_Skills": coding,
+        "Communication_Skills": communication,
+        "Problem_Solving_Skills": problem,
+        "Teamwork_Skills": teamwork,
+        "Analytical_Skills": analytical,
+        "Presentation_Skills": presentation,
+        "Networking_Skills": networking,
+        "Industry_Certifications": certifications,
+
+        "Field": field,
+        "Career": career,
+        "Salary_LPA": salary
+    }
+
+    rows.append(row)
+
+df = pd.DataFrame(rows)
+df.to_csv(OUTPUT_FILE, index=False)
+
+print("✅ Dataset generated successfully!")
+print(f"📄 File: {OUTPUT_FILE}")
+print(f"📊 Rows: {len(df)}")
+print("💰 Salary range: 3 – 80 LPA")
