@@ -1,3 +1,38 @@
-.pkl
-duplicate
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.venv/
+venv/
+ENV/
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+
+# ===== Models & Data =====
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.csv
+*.xlsx
+
+# ===== Logs =====
+*.log
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+
+# ===== VS Code =====
+.vscode/
+
+# ===== Node (if any frontend) =====
+node_modules/
+dist/
+build/
 .pdf
+duplicate
