@@ -17,7 +17,7 @@ ENV/
 *.joblib
 *.h5
 *.pt
-*.csv
+
 *.xlsx
 
 # ===== Logs =====
